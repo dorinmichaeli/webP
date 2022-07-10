@@ -137,7 +137,6 @@ function Navbar({ toggleDropdown, setTheme, theme, atHome }) {
   useEffect(() => {
     let eventListener = window.addEventListener("scroll", (e) => {
       var scrolled = document.scrollingElement.scrollTop;
-      // console.log("scroll", scroll);
       if (scrolled >= 120) {
         if (atTop) setAtTop(false);
       } else {
@@ -185,9 +184,10 @@ function Navbar({ toggleDropdown, setTheme, theme, atHome }) {
             <FaSun className="sun" />
           )}
         </DarkThemeBtn>
-        <Button primary="true" to="/addhome">
+        {/* do not need now */}
+        {/* <Button primary="true" to="/addhome">
           Add new Property
-        </Button>
+        </Button> */}
         {user && user.auth ? (
           <UserProfile
             onClick={() => setShowUserOptions(!showUserOptions)}
@@ -195,14 +195,11 @@ function Navbar({ toggleDropdown, setTheme, theme, atHome }) {
           >
             {showUserOptions && (
               <ProfileMenu ref={dropdownRef}>
-                {/* {user.isAdmin && (
+                {user.isAdmin && (
                   <MenuItem onClick={() => history.push("/admin")}>
                     Dashboard
                   </MenuItem>
-                )} */}
-                <MenuItem onClick={() => history.push("/admin")}>
-                  Dashboard
-                </MenuItem>
+                )}
                 <MenuItem onClick={() => history.push("/user")}>
                   Profile
                 </MenuItem>
