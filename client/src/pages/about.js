@@ -1,19 +1,13 @@
 import Layout from "../components/Layout";
-import styled from "styled-components";
 import InfoSection from "../components/InfoSection";
 import { AboutUsSection } from "../data/AboutUsData";
-
-const Container = styled.div`
-  margin-top: 60px;
-  width: 100%;
-`;
 
 function About() {
   return (
     <Layout>
-      <Container>
+      <div className="Container_about">
         <InfoSection {...AboutUsSection} />
-      </Container>
+      </div>
     </Layout>
   );
 }

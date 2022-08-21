@@ -3,9 +3,8 @@ import { FaTimes } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 import { menuData } from "../data/MenuData";
-import { Button } from "./Button";
 
-const DropsownContainer = styled.div`
+const DropdownContainer = styled.div`
   position: fixed;
   z-index: 999;
   width: 100%;
@@ -14,8 +13,8 @@ const DropsownContainer = styled.div`
   display: grid;
   align-items: center;
   top: 0;
-  left: ${({ isopen }) => (isopen === "true" ? 0 : "100%")};
-  opacity: ${({ isopen }) => (isopen === "true" ? 1 : 0)};
+  left: ${({ isopen }) => (isopen === true ? 0 : "100%")};
+  opacity: ${({ isopen }) => (isopen === true ? 1 : 0)};
   transition: 0.5s ease-in-out;
 `;
 
@@ -56,7 +55,7 @@ const Dropdownlink = styled(Link)`
   cursor: pointer;
   transition: 0.6s ease-in-out;
   position: relative;
-  left: ${({ isopen }) => (isopen === "true" ? 0 : "100%")};
+  left: ${({ isopen }) => (isopen === true ? 0 : "100%")};
 
   &:hover {
     color: ${({ theme }) => theme.primaryColor};
@@ -69,7 +68,7 @@ const BtnWrap = styled.div`
 
 const Dropdown = ({ toggle, isOpen }) => {
   return (
-    <DropsownContainer isopen={isOpen.toString()} onClick={toggle}>
+    <DropdownContainer isopen={isOpen.toString()} onClick={toggle}>
       <Icon onClick={toggle}>
         <CloseIcon />
       </Icon>
@@ -82,12 +81,12 @@ const Dropdown = ({ toggle, isOpen }) => {
           ))}
         </DropdownMenu>
         <BtnWrap>
-          <Button primary="true" round="true" big="true" to="/contact">
+          <Link primary="true" round="true" big="true" to="/contact">
             Contact Us
-          </Button>
+          </Link>
         </BtnWrap>
       </DropdownWrapper>
-    </DropsownContainer>
+    </DropdownContainer>
   );
 };
 

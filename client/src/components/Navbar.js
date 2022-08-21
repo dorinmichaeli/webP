@@ -1,151 +1,34 @@
 import React, { useEffect, useState, useContext, useRef } from "react";
-import styled, { css } from "styled-components/macro";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { menuData } from "../data/MenuData";
-import { Button } from "./Button";
 import { FaBars } from "react-icons/fa";
 import { DispatchContext, StateContext } from "../context/GlobalContext";
 import { USER_LOGOUT } from "../context/constants/userConstants";
-import { FaSun, FaMoon } from "react-icons/fa";
 
-const Nav = styled.nav`
-  height: 60px;
-  display: flex;
-  justify-content: space-between;
-  padding: 1rem 1rem 1rem 2rem;
-  z-index: 100;
-  position: fixed;
-  width: 100%;
-  background: ${({ atTop, atHome, theme }) =>
-    atTop && atHome ? "transparent" : theme.backgroundVariant};
-`;
-
-const NavLink = css`
-  color: ${({ theme }) => theme.primaryText};
-  display: inline-block;
-  align-items: center;
-  padding: 0 1rem;
-  height: 100%;
-  cursor: pointer;
-  text-decoration: none;
-`;
-
-const Logo = styled(Link)`
-  ${NavLink}
-  font-style: italic;
-`;
-const MenuBars = styled(FaBars)`
-  display: none;
-  color: ${({ theme }) => theme.primaryText};
-  height: 40px;
-  width: 40px;
-  position: absolute;
-  top: 0;
-  right: 0;
-  transform: translate(-50%, 25%);
-  cursor: pointer;
-  @media screen and (max-width: 768px) {
-    display: block;
-  }
-`;
-const NavMenu = styled.div`
-  display: flex;
-  align-items: center;
-  @media screen and (max-width: 768px) {
-    display: none;
-  }
-`;
-
-const NavMenuLinks = styled(Link)`
-  ${NavLink}
-`;
-
-const NavBtn = styled.div`
-  display: flex;
-  align-items: center;
-  margin-right: 24px;
-  @media screen and (max-width: 768px) {
-    display: none;
-  }
-`;
-
-const UserProfile = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #000;
-  background-image: url(${(props) => props.img});
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
-  margin-left: 1rem;
-
-  position: relative;
-  &:hover {
-    cursor: pointer;
-  }
-`;
-const ProfileMenu = styled.div`
-  position: absolute;
-  top: 45px;
-  right: -10px;
-  /* left: -100%; */
-  min-width: 10rem;
-  background-color: ${({ theme }) => theme.backgroundVariant2};
-  background-clip: padding-box;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 0.25rem;
-  padding: 0.25rem 0;
-`;
-const MenuItem = styled.div`
-  padding: 0.25rem 1.5rem;
-  line-height: 1.5rem;
-  color: ${({ theme }) => theme.primaryText};
-  font-size: 1rem;
-  margin: 0.25rem 0;
-  &:hover {
-    background-color: ${({ theme }) => theme.backgroundVariant};
-  }
-`;
-
-// Dark theme button
-const DarkThemeBtn = styled.div`
-  margin: 0 1rem;
-  font-size: 1.4rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  .sun {
-    color: #fff;
-  }
-  .moon {
-    color: #000;
-  }
-`;
-
-function Navbar({ toggleDropdown, setTheme, theme, atHome }) {
+function Navbar({ toggleDropdown }) {
   const { user } = useContext(StateContext);
   const dispatch = useContext(DispatchContext);
-  const history = useHistory();
+  const navigate = useNavigate();
   const dropdownRef = useRef(null);
   const [showUserOptions, setShowUserOptions] = useState(false);
-  const [atTop, setAtTop] = useState(true); //navbar position
+  const [attop, setAtTop] = useState(true);
   const logout = () => {
     dispatch({ type: USER_LOGOUT });
+    navigate("/")
   };
 
   useEffect(() => {
     let eventListener = window.addEventListener("scroll", (e) => {
       var scrolled = document.scrollingElement.scrollTop;
       if (scrolled >= 120) {
-        if (atTop) setAtTop(false);
+        if (attop === true) setAtTop(false);
       } else {
-        if (!atTop) setAtTop(true);
+        if (attop === false) setAtTop(true);
       }
     });
 
     return () => window.removeEventListener("scroll", eventListener);
-  }, [atTop]);
+  }, [attop]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -164,65 +47,73 @@ function Navbar({ toggleDropdown, setTheme, theme, atHome }) {
   }, [dropdownRef, showUserOptions]);
 
   return (
-    <Nav atTop={atTop} atHome={atHome}>
-      <Logo to="/">Dashboard</Logo>
-      <MenuBars onClick={toggleDropdown} />
-      <NavMenu>
+    <nav className="Nav_nav" style={{ background: attop === true ? "transparent" : "#272727" }}>
+      <Link className="NavLink_nav Logo_nav" to="/">
+        <img src='logo.png' alt="app Logo" style={{width: 35}} />
+      </Link>
+      <FaBars className="MenuBars_nav" onClick={toggleDropdown} />
+      <div className="NavMenu_nav">
         {menuData.map((item, index) => (
-          <NavMenuLinks to={item.link} key={index}>
+          <Link className="NavLink_nav" to={item.link} key={index}>
             {item.title}
-          </NavMenuLinks>
+          </Link>
         ))}
-      </NavMenu>
-      <NavBtn>
-        <DarkThemeBtn
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        >
-          {theme === "light" ? (
-            <FaMoon className="moon" />
-          ) : (
-            <FaSun className="sun" />
-          )}
-        </DarkThemeBtn>
-        {/* do not need now */}
-        {/* <Button primary="true" to="/addhome">
-          Add new Property
-        </Button> */}
+        { user && user.userType === "Customer" &&
+          <Link className="NavLink_nav" to = "/suggest">Suggested Property</Link>}
+      </div >
+      <div className="NavBtn_nav">
         {user && user.auth ? (
-          <UserProfile
+          <div className="UserProfile_nav"
             onClick={() => setShowUserOptions(!showUserOptions)}
-            img={user.profileImg}
           >
             {showUserOptions && (
-              <ProfileMenu ref={dropdownRef}>
-                {user.isAdmin && (
-                  <MenuItem onClick={() => history.push("/admin")}>
-                    Dashboard
-                  </MenuItem>
+              <div className="ProfileMenu_nav" ref={dropdownRef}>
+                {user.userType === "Admin" && (
+                  <div>
+                    <div className="MenuItem_nav" onClick={() => navigate("/admin")}>
+                      Users
+                    </div>
+                    <div className="MenuItem_nav" onClick={() => navigate("/addhome")}>
+                      Realtor
+                    </div>
+                  </div>
                 )}
-                <MenuItem onClick={() => history.push("/user")}>
-                  Profile
-                </MenuItem>
-                {/* <MenuItem onClick={() => history.push("/user")}>
-                  Preferences
-                </MenuItem> */}
-                <MenuItem onClick={logout}>Logout</MenuItem>
-              </ProfileMenu>
+                {user.userType === "Realtor" && (
+                  <div className="MenuItem_nav" onClick={() => navigate("/addhome")}>
+                    Homes
+                  </div>
+                )}
+                {user.userType === "Customer" && (
+                  <div className="MenuItem_nav" onClick={() => navigate("/showHomes")}>
+                    Show Homes
+                  </div>
+                )}
+                <div className="MenuItem_nav" onClick={logout}>Logout</div>
+              </div>
             )}
-          </UserProfile>
+          </div>
         ) : (
-          <Button
-            css={`
-              margin-left: 1rem;
-            `}
-            primary="true"
-            to="/login"
-          >
-            Login
-          </Button>
+          <div style={{display: "contents"}}>
+            <Link
+              className="Button_link"
+              style={{ margiLeft: "1rem" }}
+              primary="true"
+              to="/login"
+              >
+              Login
+            </Link>
+            <Link
+              className="Button_link"
+              style={{ margiLeft: "1rem" }}
+              primary="true"
+              to="/register"
+            >
+              Register
+            </Link>
+          </div>
         )}
-      </NavBtn>
-    </Nav>
+    </div>
+    </nav >
   );
 }
 

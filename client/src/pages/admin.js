@@ -1,128 +1,187 @@
 import { useContext, useEffect, useState } from "react";
 import Layout from "../components/Layout";
-import styled from "styled-components";
-import HomeList from "../adminScreens/HomeList";
-import HomeGrid from "../adminScreens/HomeGrid";
-import { StateContext, DispatchContext } from "../context/GlobalContext";
-import axios from "axios";
-import HomeDetails from "../components/HomeDetails";
-import { GoDashboard } from "react-icons/go";
-import { FaListUl } from "react-icons/fa";
-import { BsGrid } from "react-icons/bs";
-import SubNavigation, { SubNavItem } from "../components/SubNavigation";
-
-const Container = styled.div`
-  height: 100%;
-  padding: 0 calc((100vw - 1300px) / 2);
-  padding-top: 60px;
-`;
-
-const MainContent = styled.div`
-  flex: 1;
-`;
+import { MDBDataTable } from 'mdbreact';
+import { DispatchContext } from "../context/GlobalContext";
+import io from "socket.io-client";
+import { ENDPOINT } from "../context/constants/socketConstants";
+import BarChart from '../components/BarChart';
 
 function Admin() {
-  const state = useContext(StateContext);
+  const [userList, setUserList] = useState([]);
+  const [editView, setEditView] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+  const [chosenUser, setChosenUser] = useState({
+    email: '',
+    name: "",
+    userType: 'Admin',
+    _id: ''
+  });
   const dispatch = useContext(DispatchContext);
-  const { userHomes, loading, error } = state.homesList;
-  const [homesList, setHomesList] = useState(userHomes);
-  const [selectedHome, setSelectedHome] = useState(null);
+  const socket = io(ENDPOINT);
+  const { email, name, userType } = chosenUser;
 
-  const [openedTab, setOpnedTab] = useState(null);
+  if (userList === undefined) setUserList([]);
   useEffect(() => {
-    async function getHomes() {
-      if (homesList.length === 0) {
+    async function getUsers() {
+      if (!userList[0]) {
         dispatch({ type: "HOME_LIST_USER_REQUEST" });
         try {
-          const config = {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${localStorage.userToken}`,
-            },
-          };
-          const { data } = await axios.get("/api/homes/user",config);
-          setHomesList([...data]);
-          dispatch({ type: "HOME_LIST_USER_SUCCESS", payload: [...data] });
+          // eslint-disable-next-line
+          socket.emit("GET_USERS");
+          // eslint-disable-next-line
+          socket.on("getUsers_error", (msg) => {
+            alert("Getting User Failed on server.")
+          });
+          // eslint-disable-next-line
+          socket.on("getUsers_success", (data) => {
+            setUserList([...data]);
+          })
         } catch (e) {
-          dispatch({ type: "HOME_LIST_USER_FAIL", payload: "Someting went wrong" });
+          dispatch({ type: "GET_USER_FAIL", payload: "Someting went wrong" });
         }
       }
     }
-    getHomes();
-  }, [dispatch, homesList]);
+    getUsers();
+  }, [dispatch, userList]);
 
-  const deleteHome =async (home)=>{
-    if(window.confirm(`Are you sure you want to delete ${home.address}?`)){
-      dispatch({ type: "HOME_DELETE_REQUEST" });
-        try {
-          const config = {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${localStorage.userToken}`,
-            },
-          };
-          await axios.delete(`/api/homes/${home._id}`,config);
-          dispatch({ type: "HOME_DELETE_SUCCESS", payload: home });
-        } catch (e) {
-          dispatch({ type: "HOME_DELETE_FAIL", payload: "Someting went wrong" });
-        }
-    }
+  const editHandler = () => {
+    setIsEdit(true);
+    setEditView(true);
   }
+  const addHandler = () => {
+    setIsEdit(false);
+    setEditView(true);
+  }
+  const deleteHanlder = (id) => {
+    socket.emit("DELETE_USER", id)
+    socket.on("deleteUser_error", (msg) => {
+      alert("Delete Failed. Please try again.")
+    })
+    socket.on("deleteUser_success", (data) => {
+      setUserList([...data]);
+    })
+  }
+  const onChange = (e) => {
+    setChosenUser({ ...chosenUser, [e.target.name]: e.target.value })
+  }
+  const onSubmit = (e) => {
+    e.preventDefault();
+    setEditView(false);
+    socket.emit("EDIT_USER", { chosenUser, isEdit });
+    socket.on("editUser_error", (msg) => {
+      alert("Please try again.")
+    });
+    socket.on("editUser_success", (data) => {
+      setUserList([...data]);
+    })
+  }
+  const userData = {
+    columns: [
+      {
+        label: 'Name',
+        field: 'name',
+        sort: 'asc',
+        width: 100
+      },
+      {
+        label: 'User Type',
+        field: 'userType',
+        sort: 'asc',
+        width: 100
+      },
+      {
+        label: 'Email',
+        field: 'email',
+        sort: 'asc',
+        width: 150
+      },
+      {
+        label: 'Edit',
+        field: 'edit',
+        sort: 'asc',
+        width: 100
+      },
+      {
+        label: 'Delete',
+        field: 'delete',
+        sort: 'asc',
+        width: 100
+      },
+    ],
+    rows: userList.map((user) => {
+      return (
+        {
+          name: user.name,
+          userType: user.userType,
+          email: user.email,
+          edit: <button
+            onClick={() => {
+              setChosenUser({ name: user.name, userType: user.userType, email: user.email, _id: user._id });
+              editHandler();
+            }
+            }
+            className="Button_inner"
+          >
+            Edit
+          </button>,
+          delete: <button
+            onClick={() => deleteHanlder(user._id)}
+            className="Button_inner"
+          >
+            Delete
+          </button>,
+        }
+      )
+    })
+  };
 
   return (
-    <Layout>
-      {!selectedHome ? (
-        <Container>
-          <SubNavigation>
-            <SubNavItem
-              className={
-                openedTab === null || openedTab === "dashboard"
-                  ? "selected"
-                  : ""
-              }
-              onClick={() => setOpnedTab(null)}
-            >
-              <GoDashboard />
-              <span>Dashboard</span>
-            </SubNavItem>
-            <SubNavItem
-              className={openedTab === "propertyList" ? "selected" : ""}
-              onClick={() => setOpnedTab("propertyList")}
-            >
-              <FaListUl />
-              <span>Property List</span>
-            </SubNavItem>
-            <SubNavItem
-              className={openedTab === "propertyGrid" ? "selected" : ""}
-              onClick={() => setOpnedTab("propertyGrid")}
-            >
-              <BsGrid />
-              <span>Property Grid</span>
-            </SubNavItem>
-          </SubNavigation>
-          <MainContent>
-            {(openedTab === "dashboard" || openedTab === null) && (
-              <div style={{ textAlign: "center" }}>In Development</div>
-            )}
-            {openedTab === "propertyList" && (
-              <HomeList
-                homesList={homesList}
-                setSelectedHome={setSelectedHome}
-                deleteHome={deleteHome}
-              />
-            )}
-            {openedTab === "propertyGrid" && (
-              <HomeGrid
-                homesList={homesList}
-                setSelectedHome={setSelectedHome}
-                deleteHome={deleteHome}
-              />
-            )}
-          </MainContent>
-        </Container>
-      ) : (
-        <HomeDetails home={selectedHome} back={() => setSelectedHome(null)} />
-      )}
+    <Layout className="admin">
+      <div className="table">
+        {!editView &&
+          <div>
+            <MDBDataTable hover
+              striped
+              bordered
+              small
+              data={userData}
+            />
+            <button className="add Input_addhome Button_addhome" style={{width: "50%", marginLeft: "25vw"}} onClick={() => {
+              setChosenUser({ name: "", userType: "Admin", email: "", _id: 0 });
+              addHandler();
+            }
+            }>ADD</button>
+            <div className="graph1"></div>
+            <div className="graph2"></div>
+            <BarChart />
+          </div>
+        }
+        {editView &&
+          <div className="addUser">
+            <h2>{isEdit ? "Edit User" : "Add User"}</h2>
+            <form className="editView" onSubmit={onSubmit}>
+              <span onClick={() => setEditView(false)}>X</span>
+              <div className="input-group">
+                <label htmlFor="name">Name</label>
+                <input type="text" style={{ color: "black" }} name="name" id="name" value={name} onChange={onChange} />
+              </div>
+              <div className="input-group">
+                <label htmlFor="userType">User Type</label>
+                <select id="userType" value={userType} name="userType" onChange={onChange}>
+                  <option>Admin</option>
+                  <option>Realtor</option>
+                  <option>Customer</option>
+                </select>
+              </div>
+              <div className="input-group">
+                <label htmlFor="email">Email</label>
+                <input type="text" id="email" value={email} name="email" onChange={onChange} />
+              </div>
+              <input type="submit" className="submit" value="Update" />
+            </form>
+          </div>
+        }
+      </div>
     </Layout>
   );
 }

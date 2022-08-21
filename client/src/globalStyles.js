@@ -47,8 +47,6 @@ export const themes = {
     backgroundVariant: "#272727",
     backgroundVariant2: "#303030",
     primaryColor: "#cd853f",
-    // headingColor: "#fff",
-    // headingColorInverted: "#000",
     textColor: "#6c737d",
     primaryText: "#fff",
     secondaryText: "#6c737d",
@@ -70,7 +68,6 @@ export const themes = {
   },
 };
 
-//google map styles
 export const mapStyles = {
   dark: [
     {

@@ -1,88 +1,12 @@
-import { useState } from "react";
-import styled, { css } from "styled-components";
-import { useHistory } from "react-router-dom";
-import { IoChevronForward, IoChevronBack } from "react-icons/io5";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { BsDot } from "react-icons/bs";
+import axios from "axios";
 
-const CardWrapper = styled.div`
-  width: 100%;
-  height: 500px;
-  overflow: hidden;
-  background: ${({ theme }) => theme.backgroundVariant};
-  margin: 1rem 0;
-`;
-const ImagesWrapper = styled.div`
-  display: flex;
-  width: 100%;
-  height: 60%;
-  align-items: center;
-  justify-content: space-between;
-  position: relative;
-  cursor: pointer;
-  overflow: hidden;
-`;
-const ImagesWrapperInner = styled.div`
-  width: 100%;
-  height: 100%;
-  display: flex;
-  position: absolute;
-  max-height: 300px;
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: 0.3s all ease-in-out;
-    &:hover {
-      transform: scale(1.2);
-      /* filter: brightness(0.8); */
-    }
-  }
-`;
-const arrowStyles = css`
-  width: 40px;
-  height: 40px;
-  z-index: 2;
-  color: ${({ theme }) => theme.headingColor};
-  cursor: pointer;
-  background: ${({ theme }) => theme.background};
-  border-radius: 50px;
-  padding: 10px;
-  margin: 1rem;
-  user-select: none;
-  transition: 0.3s;
-
-  &:hover {
-    background: ${({ theme }) => theme.primaryColor};
-    transform: scale(1.25);
-  }
-`;
-const ForwardArrow = styled(IoChevronForward)`
-  ${arrowStyles}
-`;
-const BackwardArrow = styled(IoChevronBack)`
-  ${arrowStyles}
-`;
-
-const CardContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  padding: 1rem 2rem;
-  span {
-    margin: 0.25rem 0;
-  }
-  h2 {
-    transition: 0.3s;
-    &:hover {
-      color: ${({ theme }) => theme.primaryColor};
-      transform: scale(1.02);
-      cursor: pointer;
-    }
-  }
-`;
 
 function ListCard({
   _id,
-  images,
+  image,
   title,
   address,
   price,
@@ -92,41 +16,94 @@ function ListCard({
   washrooms,
   size,
   pets,
+  rented,
 }) {
-  let history = useHistory();
-  const [selectedImg, setSelectedImg] = useState(0);
-  const forward = () => setSelectedImg((selectedImg + 1) % images.length);
-  const backward = () =>
-    setSelectedImg(selectedImg === 0 ? images.length - 1 : selectedImg - 1);
+  let navigate = useNavigate();
+  let [rent, setRent] = useState(rented);
+  const [selectedImg, setSelectedImg] = useState("");
+  const [alert, setAlert] = useState("");
+  useEffect(() => {
+    setSelectedImg(0);
+  }, [])
+  if (typeof image === "undefined") return <>undefind</>;
 
-  if (typeof images === "undefined") return <>undefiind</>;
+  const rentProperty = async (id) => {
+    try {
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.userToken}`,
+        },
+      };
+      await axios.post(
+        "/api/cart/",
+        {
+          id: _id,
+        },
+        config
+      );
+      setRent(true);
+      setAlert("Rent Property Succeed")
+      setTimeout(() => setAlert(""), 3000)
+    } catch (e) {
+      setAlert(
+        e.message
+          ? e.message
+          : "Something went wrong."
+      );
+    }
+  }
+  const leaveProperty = async (id) => {
+    try {
+        const config = {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.userToken}`,
+            },
+        };
+        await axios.delete(`/api/cart/${id}`, config)
+        console.log(id)
+        setRent(false);
+        setAlert("Leave Property Succeed.")
+        setTimeout(() => setAlert(""), 3000)
+    } catch (e) {
+        setAlert(
+            e.message
+                ? e.message
+                : "Something went wrong."
+        );
+    }
+}
 
   return (
-    <CardWrapper className="list-card">
-      <ImagesWrapper>
-        <BackwardArrow onClick={backward} />
-        <ImagesWrapperInner>
-          <img
-            src={"/" + images[selectedImg]}
-            alt="card"
-            onClick={() => history.push(`/homes/${_id}`)}
-          />
-        </ImagesWrapperInner>
-        <ForwardArrow onClick={forward} />
-      </ImagesWrapper>
-      <CardContent>
-        <h2 onClick={() => history.push(`/homes/${_id}`)}>{title}</h2>
-        <span>${price}</span>
-        <span>{address}</span>
-        <span>
-          {type}  <small>{date.substr(0,10)}</small>
-        </span>
-        <span>
-          {rooms} BED <BsDot /> {washrooms} BATH <BsDot /> {size}FT²
-        </span>
-        <span>PETS : {pets ? " allowed" : " not allowed"}</span>
-      </CardContent>
-    </CardWrapper>
+    <section>
+      {alert && <div>{alert}</div>}
+      {!alert &&
+        <div className="list-card CardWrapper_list">
+          <div className="ImagesWrapper_list">
+            <div className="ImagesWrapperInner_list">
+              <img
+                src={image[0].substr(14)}
+                alt="card"
+              />
+            </div>
+          </div>
+          <div className="CardContent_list">
+            <h2 onClick={() => navigate(`/homes/${_id}`)}>{title}</h2>
+            <span>${price}</span>
+            <span>{address}</span>
+            <span>
+              {type}  <small>{date.substr(0, 10)}</small>
+            </span>
+            <span>
+              {rooms} BED <BsDot /> {washrooms} BATH <BsDot /> {size}FT²
+            </span>
+            <span>PETS : {pets ? " allowed" : " not allowed"}</span>
+            <button onClick={ rent === true ? () => leaveProperty(_id) : () => rentProperty(_id)} className="Button_addhome Input_addhome">{rent ? "Leave" : "RENT"}</button>
+          </div>
+        </div>
+      }
+    </section>
   );
 }
 

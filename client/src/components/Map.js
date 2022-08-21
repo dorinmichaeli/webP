@@ -1,47 +1,29 @@
 import { useState, useEffect, useContext } from "react";
-import { useHistory } from "react-router-dom";
-import { DispatchContext, StateContext } from "../context/GlobalContext";
+import { useNavigate } from "react-router-dom";
+import { DispatchContext } from "../context/GlobalContext";
 import { useTheme } from "styled-components";
 import { mapStyles } from "../globalStyles";
 import MapInfoWindow from "./MapInfoWindow";
 import GoogleMapReact from "google-map-react";
-import styled from "styled-components";
 import { ImLocation } from "react-icons/im";
 
 
-const MapMarker = styled.div`
-  position: absolute;
-  transform: translate(-50%, -50%);
-  color: #3f51b5;
-
-  svg {
-    width: 1.5rem;
-    height: 1.5rem;
-    cursor: pointer;
-    text-align: center;
-  }
-`;
-
-const MapContainer = () => {
+const MapContainer = (home) => {
   const theme = useTheme();
-  const history = useHistory();
+  const navigate = useNavigate();
   const dispatch = useContext(DispatchContext);
-  const state = useContext(StateContext);
-  const { homes } = state.homesList;
   const [showInfoWindow, setShowInfoWindow] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState({});
   const [mapStyle, setMapStyle] = useState(mapStyles.dark);
-
+  const homes = home.data;
   const location = {
-    lng: -122.85,
-    lat: 49.183333,
+    lng: homes.length === 0 ? 52.189 : homes[0].position.lng,
+    lat: homes.length === 0 ? 52.189 : homes[0].position.lat,
   };
 
-   useEffect(() => {
+  useEffect(() => {
     setMapStyle(theme.name === "dark" ? mapStyles.dark : mapStyles.light);
-  }, [theme]); 
-
-
+  }, [theme]);
 
   const markerClicked = (home) => {
     setSelectedPlace(home);
@@ -55,10 +37,9 @@ const MapContainer = () => {
     dispatch({ type: "REMOVE_SELECTEDITEM" });
   };
 
-  const createMapOptions =()=>({
+  const createMapOptions = () => ({
     styles: mapStyle
   })
-
   return (
     <div key={mapStyle} style={{ width: "100%", height: "100%" }}>
       <GoogleMapReact
@@ -69,7 +50,7 @@ const MapContainer = () => {
         options={createMapOptions}
       >
         {homes.map((home) => (
-          <MapMarker
+          <div className="MapMarker"
             onClick={() => markerClicked(home)}
             lat={home.position.lat}
             lng={home.position.lng}
@@ -78,12 +59,12 @@ const MapContainer = () => {
             {showInfoWindow && selectedPlace._id === home._id && (
               <MapInfoWindow
                 selectedPlace={selectedPlace}
-                history={history}
+                navigate={navigate}
                 closeInfoWindow={closeInfoWindow}
               />
             )}
             <ImLocation />
-          </MapMarker>
+          </div>
         ))}
       </GoogleMapReact>
     </div>

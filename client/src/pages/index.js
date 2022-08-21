@@ -8,7 +8,7 @@ import {homes} from '../data/homesData'
 
 function index() {
   return (
-    <Layout atHome>
+    <Layout>
       <Hero slides={SliderData} />
       <InfoSection {...InfoData} />
       <InfoSection {...InfoDataTwo} />
